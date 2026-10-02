@@ -1,0 +1,19 @@
+# Dependências e builds
+node_modules/
+dist/
+dist-ssr/
+
+# Chaves e variáveis de ambiente (nunca vão para o GitHub)
+.env
+.env.*
+!.env.example
+*.local
+
+# Vercel
+.vercel
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+*.log
+.idea/

@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/manrope';
+@import '@fontsource/cormorant-garamond/500.css';
+@import '@fontsource/cormorant-garamond/500-italic.css';
+@import '@fontsource/cormorant-garamond/600.css';
+
+@theme {
+  --color-navy: #073b70;
+  --color-navy-deep: #04274b;
+  --color-teal: #159fa8;
+  --color-teal-deep: #0e7d85;
+  --color-teal-soft: #e3f4f5;
+  --color-beige: #e8d7c3;
+  --color-sand: #f5ede3;
+  --color-mist: #f7f9fa;
+  --color-ink: #0c2236;
+  --color-muted: #5a6b7c;
+  --color-line: #e2e8ee;
+  --color-danger: #b4452f;
+
+  --font-sans: 'Manrope Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Cormorant Garamond', 'Times New Roman', Georgia, serif;
+
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-white font-sans text-ink antialiased;
+    font-feature-settings: 'ss01';
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  input, select, textarea {
+    font: inherit;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@utility wrap {
+  @apply mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-10;
+}
+@utility eyebrow {
+  @apply text-[11px] font-semibold tracking-[0.24em] uppercase text-teal-deep;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[13px] font-semibold tracking-[0.14em] uppercase transition duration-300 ease-soft disabled:pointer-events-none disabled:opacity-40;
+}
+@utility btn-primary {
+  @apply btn bg-navy text-white hover:bg-navy-deep hover:shadow-[0_10px_30px_-10px_rgba(7,59,112,.6)];
+}
+@utility btn-teal {
+  @apply btn bg-teal text-white hover:bg-teal-deep;
+}
+@utility btn-outline {
+  @apply btn border border-navy/25 text-navy hover:border-navy hover:bg-navy hover:text-white;
+}
+@utility btn-light {
+  @apply btn bg-white text-navy hover:bg-sand;
+}
+@utility field {
+  @apply w-full rounded-xl border border-line bg-white px-4 py-3 text-[15px] text-ink outline-none transition placeholder:text-muted/60 focus:border-teal focus:ring-4 focus:ring-teal/10;
+}
+@utility label {
+  @apply mb-1.5 block text-xs font-semibold tracking-wide text-muted;
+}
+@utility num {
+  font-variant-numeric: tabular-nums;
+}

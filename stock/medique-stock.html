@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MEDIQUE Controlo de Stock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    color-scheme: light;
+    --navy: #0E2A47;
+    --navy-2: #163A5F;
+    --teal: #12A39B;
+    --teal-deep: #0B7F79;
+    --teal-tint: #E9F6F5;
+    --ink: #13263B;
+    --muted: #5F7488;
+    --faint: #B8C6D2;
+    --line: #E3EAF0;
+    --row-alt: #F7FAFC;
+    --paper: #FFFFFF;
+    --ground: #EEF3F6;
+    --display: "Sora", "Segoe UI", system-ui, sans-serif;
+    --body: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    padding: 32px 16px;
+  }
+  .sheet {
+    max-width: 880px;
+    margin: 0 auto;
+    background: var(--paper);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(14, 42, 71, .06), 0 12px 40px rgba(14, 42, 71, .10);
+  }
+
+  /* Header */
+  .head {
+    background: var(--navy);
+    color: #fff;
+    padding: 34px 40px 30px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    position: relative;
+  }
+  .head::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 4px;
+    background: var(--teal);
+  }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .mark {
+    width: 46px; height: 46px;
+    border-radius: 10px;
+    background: var(--teal);
+    display: grid; place-items: center;
+    flex: none;
+  }
+  .mark svg { width: 24px; height: 24px; }
+  .wordmark {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 30px;
+    letter-spacing: .22em;
+    line-height: 1;
+  }
+  .subtitle {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .28em;
+    color: #8FD9D3;
+  }
+  .headline-total { text-align: right; }
+  .headline-total .num {
+    font-family: var(--display);
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .headline-total .lbl {
+    margin-top: 6px;
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: #A9BCCD;
+  }
+
+  /* Table */
+  .body { padding: 28px 40px 8px; }
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  thead th {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--navy);
+    padding: 0 8px 12px;
+    border-bottom: 2px solid var(--navy);
+    text-align: center;
+    white-space: nowrap;
+  }
+  thead th:first-child { text-align: left; padding-left: 0; }
+  thead th.tot { color: var(--teal-deep); }
+  tbody td {
+    padding: 11px 8px;
+    border-bottom: 1px solid var(--line);
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  tbody tr:nth-child(even) td { background: var(--row-alt); }
+  tbody td:first-child {
+    text-align: left;
+    padding-left: 0;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  tbody tr:nth-child(even) td:first-child { padding-left: 0; }
+  .color-cell { display: flex; align-items: center; gap: 12px; }
+  .sw {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex: none;
+    box-shadow: inset 0 0 0 1px rgba(14, 42, 71, .18);
+  }
+  .sw.camo {
+    background:
+      radial-gradient(circle at 30% 35%, #4F5D2F 0 28%, transparent 30%),
+      radial-gradient(circle at 70% 65%, #2F3A1E 0 26%, transparent 28%),
+      radial-gradient(circle at 75% 25%, #8A8F5A 0 20%, transparent 22%),
+      #6B7440;
+  }
+  .color-cell .alt { color: var(--muted); font-weight: 400; }
+  td.zero { color: var(--faint); font-weight: 400; }
+  td.pending { color: var(--teal-deep); }
+  td.pending span {
+    display: inline-block;
+    min-width: 26px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--teal-tint);
+    box-shadow: inset 0 0 0 1px rgba(18, 163, 155, .35);
+  }
+  td.tot {
+    font-family: var(--display);
+    font-weight: 600;
+    color: var(--navy);
+    background: var(--teal-tint) !important;
+  }
+  tfoot td {
+    padding: 14px 8px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--navy);
+    border-top: 2px solid var(--navy);
+  }
+  tfoot td:first-child {
+    text-align: left;
+    padding-left: 0;
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  tfoot td.grand {
+    background: var(--navy);
+    color: #fff;
+    font-family: var(--display);
+    font-size: 17px;
+  }
+
+  /* Summary */
+  .summary {
+    padding: 24px 40px 32px;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(170px, 1.9fr);
+    gap: 10px;
+  }
+  .stat {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 6px 12px;
+    text-align: center;
+    min-width: 0;
+  }
+  .stat .k {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .stat .v {
+    margin-top: 6px;
+    font-family: var(--display);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--navy);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .stat.is-zero .v { color: var(--faint); }
+  .stat.is-pending { background: var(--teal-tint); border-color: rgba(18, 163, 155, .35); }
+  .stat.is-pending .v { color: var(--teal-deep); }
+  .stat.grand {
+    background: var(--navy);
+    border-color: var(--navy);
+    text-align: left;
+    padding: 14px 18px 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat.grand::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--teal);
+  }
+  .stat.grand .k { color: #8FD9D3; }
+  .stat.grand .v { color: #fff; font-size: 30px; }
+  .stat.grand .v small {
+    font-family: var(--body);
+    font-size: 13px;
+    font-weight: 500;
+    color: #A9BCCD;
+    margin-left: 6px;
+    letter-spacing: 0;
+  }
+
+  .note {
+    margin: 0 40px;
+    padding: 16px 0 26px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .note .dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--teal);
+    margin-right: 8px;
+    vertical-align: 1px;
+  }
+  .note .foot { letter-spacing: .14em; font-size: 10.5px; font-weight: 600; text-transform: uppercase; color: var(--faint); }
+
+  @media (max-width: 720px) {
+    body { padding-block: 16px; }
+    .head { padding: 26px 20px 24px; }
+    .headline-total { text-align: left; }
+    .body { padding: 20px 20px 4px; }
+    .summary { padding: 20px; grid-template-columns: repeat(3, 1fr); }
+    .stat.grand { grid-column: 1 / -1; }
+    .note { margin: 0 20px; }
+    .wordmark { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<main class="sheet">
+  <header class="head">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" fill="#fff"/></svg>
+      </div>
+      <div>
+        <div class="wordmark">MEDIQUE</div>
+        <div class="subtitle">CONTROLO DE STOCK</div>
+      </div>
+    </div>
+    <div class="headline-total">
+      <div class="num">35</div>
+      <div class="lbl">Uniformes em stock</div>
+    </div>
+  </header>
+
+  <section class="body">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Cor</th>
+            <th scope="col">S</th>
+            <th scope="col">M</th>
+            <th scope="col">L</th>
+            <th scope="col">XL</th>
+            <th scope="col">XXL</th>
+            <th scope="col">A confirmar</th>
+            <th scope="col" class="tot">Total</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+        <tfoot>
+          <tr>
+            <td>Total por tamanho</td>
+            <td>18</td><td>8</td><td>5</td><td>3</td><td>0</td><td>1</td>
+            <td class="grand">35</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section class="summary" aria-label="Resumo final">
+    <div class="stat"><div class="k">Tamanho S</div><div class="v">18</div></div>
+    <div class="stat"><div class="k">Tamanho M</div><div class="v">8</div></div>
+    <div class="stat"><div class="k">Tamanho L</div><div class="v">5</div></div>
+    <div class="stat"><div class="k">Tamanho XL</div><div class="v">3</div></div>
+    <div class="stat is-zero"><div class="k">Tamanho XXL</div><div class="v">0</div></div>
+    <div class="stat is-pending"><div class="k">A confirmar</div><div class="v">1</div></div>
+    <div class="stat grand"><div class="k">Total geral</div><div class="v">35<small>uniformes</small></div></div>
+  </section>
+
+  <footer class="note">
+    <span><span class="dot"></span>1 uniforme rosa forte/pink com tamanho ainda por confirmar.</span>
+    <span class="foot">Medique · Uniformes médicos</span>
+  </footer>
+</main>
+
+<script>
+  // [cor, alternativa, swatch, S, M, L, XL, XXL, A confirmar]
+  const data = [
+    ["Azul", "Azul royal", "#2F5FD0", 2, 3, 2, 0, 0, 0],
+    ["Azul claro", "Turquesa", "#4FC3D9", 1, 0, 1, 0, 0, 0],
+    ["Branco", "", "#FFFFFF", 2, 0, 1, 1, 0, 0],
+    ["Rosa", "Vermelho-rosa", "#E0567A", 0, 1, 0, 0, 0, 0],
+    ["Rosa forte", "Pink", "#E6338F", 3, 1, 0, 0, 0, 1],
+    ["Rosa salmão", "Coral claro", "#F4A08A", 2, 0, 0, 0, 0, 0],
+    ["Vermelho", "", "#C8252F", 2, 0, 0, 1, 0, 0],
+    ["Bege claro", "Creme", "#EFE4CC", 0, 1, 0, 0, 0, 0],
+    ["Bordô", "Vinho", "#6E1A2D", 0, 1, 1, 0, 0, 0],
+    ["Azul petróleo", "Verde petróleo", "#1B5E6B", 1, 0, 0, 0, 0, 0],
+    ["Verde-lima", "Verde claro", "#9BD45A", 2, 0, 0, 0, 0, 0],
+    ["Verde escuro", "Verde garrafa", "#1F4D34", 1, 0, 0, 1, 0, 0],
+    ["Preto", "", "#1A1D21", 1, 0, 0, 0, 0, 0],
+    ["Cinzento", "Cinza", "#9AA3AB", 1, 0, 0, 0, 0, 0],
+    ["Camuflado verde", "", "camo", 0, 1, 0, 0, 0, 0],
+  ];
+  const tbody = document.getElementById("rows");
+  tbody.innerHTML = data.map(([name, alt, sw, ...q]) => {
+    const total = q.reduce((a, b) => a + b, 0);
+    const swatch = sw === "camo"
+      ? '<span class="sw camo"></span>'
+      : `<span class="sw" style="background:${sw}"></span>`;
+    const cells = q.map((n, i) => {
+      if (n === 0) return '<td class="zero">–</td>';
+      if (i === 5) return `<td class="pending"><span>${n}</span></td>`;
+      return `<td>${n}</td>`;
+    }).join("");
+    return `<tr><td><span class="color-cell">${swatch}<span>${name}${alt ? ` <span class="alt">/ ${alt}</span>` : ""}</span></span></td>${cells}<td class="tot">${total}</td></tr>`;
+  }).join("");
+</script>
+</body>
+</html>
