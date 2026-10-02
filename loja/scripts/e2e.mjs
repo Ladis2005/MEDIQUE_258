@@ -1,5 +1,5 @@
 // Teste de ponta a ponta da loja MEDIQUE via Chrome DevTools Protocol (Edge headless).
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -7,7 +7,8 @@ import { join } from 'node:path'
 const BASE = process.env.BASE || 'http://localhost:4175'
 const OUT = process.env.OUT
 const EDGE = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
-const PORT = 9333
+// Porta diferente em cada execução, para nunca apanhar um Edge que tenha ficado aberto.
+const PORT = 9300 + Math.floor(Math.random() * 600)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const results = []
 const check = (name, ok, info = '') => {
@@ -205,8 +206,15 @@ try {
 } catch (e) {
   if (!e.done) check('execução do teste', false, e.message)
 } finally {
+  // Pede ao Edge que se feche (fecha todos os seus processos); senão fica aberto em segundo plano.
+  try {
+    await Promise.race([send('Browser.close'), sleep(3000)])
+  } catch {
+    /* já fechado */
+  }
   ws?.close()
-  edge.kill()
+  await sleep(500)
+  spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'])
   const failed = results.filter((r) => !r.ok).length
   console.log(`\n${results.length - failed}/${results.length} verificações passaram`)
   process.exit(failed ? 1 : 0)

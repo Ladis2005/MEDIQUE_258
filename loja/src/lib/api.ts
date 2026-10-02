@@ -113,14 +113,24 @@ async function readDb(): Promise<LocalDb> {
   return fresh
 }
 
-async function compressImage(file: File, max = 1600): Promise<string> {
+/** Reduz a fotografia para, no máximo, `max` px de lado. As fotos de telemóvel têm vários MB; assim ficam leves. */
+async function scaleImage(file: File, max = 1600): Promise<HTMLCanvasElement> {
   const bmp = await createImageBitmap(file)
   const scale = Math.min(1, max / Math.max(bmp.width, bmp.height))
   const canvas = document.createElement('canvas')
   canvas.width = Math.round(bmp.width * scale)
   canvas.height = Math.round(bmp.height * scale)
   canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height)
-  return canvas.toDataURL('image/jpeg', 0.86)
+  return canvas
+}
+
+const compressImage = async (file: File) => (await scaleImage(file)).toDataURL('image/jpeg', 0.86)
+
+const compressToBlob = async (file: File) => {
+  const canvas = await scaleImage(file)
+  return new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Não foi possível preparar a imagem.'))), 'image/jpeg', 0.86),
+  )
 }
 
 const readAsDataUrl = (file: File) =>
@@ -381,9 +391,18 @@ const supabaseApi: Api = {
   },
   async uploadFile(file, folder) {
     const db = await sb()
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'bin'
+    let body: Blob = file
+    let ext = file.name.split('.').pop()?.toLowerCase() || 'bin'
+    if (folder === 'produtos') {
+      try {
+        body = await compressToBlob(file)
+        ext = 'jpg'
+      } catch {
+        /* formato que o navegador não sabe reduzir: envia o original */
+      }
+    }
     const path = `${folder}/${crypto.randomUUID()}.${ext}`
-    check(await db.storage.from('media').upload(path, file, { cacheControl: '31536000' }))
+    check(await db.storage.from('media').upload(path, body, { cacheControl: '31536000', contentType: body.type || file.type }))
     return db.storage.from('media').getPublicUrl(path).data.publicUrl
   },
 }

@@ -104,11 +104,11 @@ function NotifyButton() {
   const [perm, setPerm] = useState(supported ? Notification.permission : 'denied')
   if (!supported) return null
   if (perm === 'granted')
-    return <span className="hidden text-xs font-semibold text-teal-deep sm:inline" title="O painel avisa quando chega uma encomenda">🔔 Avisos ligados</span>
+    return <span className="text-xs font-semibold whitespace-nowrap text-teal-deep" title="O painel avisa quando chega uma encomenda">🔔 Avisos ligados</span>
   if (perm === 'denied')
     return <span className="hidden text-xs text-muted sm:inline" title="Autorize as notificações deste site nas definições do navegador">🔕 Avisos bloqueados</span>
   return (
-    <button onClick={async () => setPerm(await Notification.requestPermission())} className="rounded-full bg-teal px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-deep">
+    <button onClick={async () => setPerm(await Notification.requestPermission())} className="rounded-full bg-teal px-3 py-2 text-xs font-semibold whitespace-nowrap text-white hover:bg-teal-deep">
       🔔 Ativar avisos
     </button>
   )
@@ -123,13 +123,13 @@ function Panel({ onSignOut }: { onSignOut(): void }) {
       <header className="sticky top-0 z-30 border-b border-line bg-white">
         <div className="mx-auto flex max-w-[1400px] items-center gap-4 px-4 py-3 sm:px-6">
           <img src="/logo.png" alt="" className="h-8 w-auto" />
-          <span className="font-display text-xl tracking-[0.18em] text-navy">PAINEL</span>
+          <span className="hidden font-display text-xl tracking-[0.18em] text-navy sm:inline">PAINEL</span>
           {api.mode === 'local' && (
             <span className="hidden rounded-full bg-sand px-3 py-1 text-[11px] font-semibold text-ink/70 sm:inline">Modo local</span>
           )}
           <span className="ml-auto" />
           <NotifyButton />
-          <a href="/" target="_blank" className="text-sm text-muted hover:text-navy">
+          <a href="/" target="_blank" className="text-sm whitespace-nowrap text-muted hover:text-navy">
             Ver loja ↗
           </a>
           <button
@@ -182,7 +182,7 @@ function Panel({ onSignOut }: { onSignOut(): void }) {
         </div>
       )}
 
-      <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6">
+      <main className="mx-auto max-w-[1400px] px-4 pt-6 pb-28 sm:px-6 md:py-8">
         <Routes>
           <Route index element={<Overview />} />
           <Route path="encomendas" element={<Orders />} />

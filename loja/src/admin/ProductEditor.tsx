@@ -26,7 +26,7 @@ function blank(id: string): Product {
 
 function Upload({ label, accept, onFile, busy }: { label: string; accept: string; onFile(f: File): void; busy?: boolean }) {
   return (
-    <label className={`inline-flex cursor-pointer items-center rounded-full border border-dashed border-navy/40 px-3 py-1.5 text-xs font-semibold text-navy hover:bg-mist ${busy ? 'pointer-events-none opacity-50' : ''}`}>
+    <label className={`inline-flex cursor-pointer items-center rounded-full border border-dashed border-navy/40 px-3.5 py-2.5 text-xs sm:py-1.5 font-semibold text-navy hover:bg-mist ${busy ? 'pointer-events-none opacity-50' : ''}`}>
       {busy ? 'A carregar…' : label}
       <input
         type="file"
@@ -113,7 +113,7 @@ export default function ProductEditor() {
                 Ver na loja ↗
               </a>
             )}
-            <button onClick={save} disabled={busy === 'save'} className="btn-primary px-5 py-2.5">
+            <button onClick={save} disabled={busy === 'save'} className="btn-primary px-5 py-2.5 max-md:hidden">
               {busy === 'save' ? 'A guardar…' : 'Guardar'}
             </button>
           </div>
@@ -123,7 +123,7 @@ export default function ProductEditor() {
       </PageTitle>
       {err && <p className="mb-4 rounded-xl bg-danger/10 p-3 text-sm text-danger">{err}</p>}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.5fr]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_1.5fr] [&>*]:min-w-0">
         <div className="grid h-fit gap-6">
           <Card title="Informação">
             <div className="grid gap-4">
@@ -322,6 +322,12 @@ export default function ProductEditor() {
             })}
           </ul>
         </Card>
+      </div>
+      {/* No telemóvel, o botão de guardar fica sempre à mão no fundo do ecrã. */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] backdrop-blur md:hidden">
+        <button onClick={save} disabled={busy === 'save'} className="btn-primary w-full">
+          {busy === 'save' ? 'A guardar…' : 'Guardar produto'}
+        </button>
       </div>
       <Toast msg={toast} />
     </>

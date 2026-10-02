@@ -11,10 +11,35 @@ export default function Products() {
   const navigate = useNavigate()
   return (
     <>
-      <PageTitle action={<button onClick={() => navigate(`/admin/produtos/novo-${uid()}`)} className="btn-primary">Adicionar produto</button>}>
+      <PageTitle action={<button onClick={() => navigate(`/admin/produtos/novo-${uid()}`)} className="btn-primary max-sm:w-full">Adicionar produto</button>}>
         Produtos
       </PageTitle>
-      <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+      <ul className="grid gap-3 md:hidden">
+        {products.map((p) => {
+          const first = p.colors[0]
+          return (
+            <li key={p.id}>
+              <Link to={`/admin/produtos/${p.id}`} className="flex gap-4 rounded-2xl border border-line bg-white p-3 active:bg-mist">
+                <span className="h-24 w-20 shrink-0 overflow-hidden rounded-xl bg-mist">
+                  <ProductVisual pc={first} color={first ? color(first.colorId) : undefined} badge={false} />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+                  <b className="text-navy">{p.name}</b>
+                  <span className={`num text-sm ${p.price == null ? 'font-semibold text-danger' : ''}`}>
+                    {p.price == null ? 'Sem preço' : priceLabel(p.price)}
+                  </span>
+                  <span className="text-xs text-muted">
+                    {productTotal(p)} em stock · {p.colors.length} {p.colors.length === 1 ? 'cor' : 'cores'}
+                    {!p.active && ' · oculto'}
+                  </span>
+                </span>
+                <span className="self-center text-xl text-muted">›</span>
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
+      <div className="hidden overflow-x-auto rounded-2xl border border-line bg-white md:block">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="bg-mist text-[11px] tracking-[0.14em] text-muted uppercase">
             <tr>

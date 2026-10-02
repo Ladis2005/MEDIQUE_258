@@ -5,7 +5,7 @@ export function Card({ title, action, children, className = '' }: { title?: stri
   return (
     <section className={`rounded-2xl border border-line bg-white p-5 ${className}`}>
       {(title || action) && (
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           {title && <h2 className="font-display text-2xl text-navy">{title}</h2>}
           {action}
         </div>
@@ -40,7 +40,7 @@ export function StatusPill({ s }: { s: OrderStatus }) {
 export function Toast({ msg }: { msg: string }) {
   if (!msg) return null
   return (
-    <div role="status" className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-navy px-5 py-3 text-sm text-white shadow-xl">
+    <div role="status" className="fixed bottom-24 left-1/2 z-50 w-max max-w-[90vw] -translate-x-1/2 rounded-full bg-navy px-5 py-3 text-center text-sm text-white shadow-xl md:bottom-6">
       {msg}
     </div>
   )

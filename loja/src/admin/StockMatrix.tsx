@@ -70,7 +70,43 @@ export default function StockMatrix() {
         return (
           <section key={p.id} className="mb-8">
             <h2 className="mb-3 font-display text-2xl text-navy">{p.name}</h2>
-            <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+            <div className="grid gap-3 md:hidden">
+              {rows.map((pc) => {
+                const c = color(pc.colorId)
+                const t = colorTotal(pc)
+                return (
+                  <div key={pc.id} className="rounded-2xl border border-line bg-white p-4">
+                    <div className="flex items-center gap-2">
+                      <span className="size-5 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: c?.swatch || c?.hex }} />
+                      <b className="min-w-0 flex-1 text-navy">{c?.name}</b>
+                      <span className={`num text-sm font-bold ${t ? 'text-navy' : 'text-danger'}`}>{t ? `${t} pç` : 'Esgotado'}</span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-4 gap-2">
+                      {[...settings.sizes, '__pending'].map((s) => {
+                        const v = s === '__pending' ? pc.pending : qtyOf(pc, s)
+                        return (
+                          <label key={s} className="text-center">
+                            <span className="mb-1 block text-[11px] font-bold text-muted">{s === '__pending' ? 'A conf.' : s}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              inputMode="numeric"
+                              className={`num w-full rounded-lg border py-2.5 text-center text-base ${
+                                s === '__pending' ? 'border-transparent bg-sand' : v ? 'border-line font-semibold' : 'border-transparent bg-mist text-muted'
+                              }`}
+                              value={v}
+                              onFocus={(e) => e.target.select()}
+                              onChange={(e) => set(p.id, pc.id, s, Math.max(0, parseInt(e.target.value) || 0))}
+                            />
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="hidden overflow-x-auto rounded-2xl border border-line bg-white md:block">
               <table className="num w-full min-w-[720px] text-sm">
                 <thead className="bg-mist text-[11px] tracking-[0.14em] text-muted uppercase">
                   <tr>
@@ -138,6 +174,13 @@ export default function StockMatrix() {
           <span className="ml-auto">
             Total geral: <b className="text-base">{totals.reduce((a, b) => a + b, 0) + pendingAll}</b>
           </span>
+        </div>
+      )}
+      {dirty.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] backdrop-blur md:hidden">
+          <button onClick={save} disabled={busy} className="btn-primary w-full">
+            {busy ? 'A guardar…' : 'Guardar alterações'}
+          </button>
         </div>
       )}
       <Toast msg={toast} />
