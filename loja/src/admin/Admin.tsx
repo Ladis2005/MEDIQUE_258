@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { NavLink, Route, Routes } from 'react-router-dom'
+import { Link, NavLink, Route, Routes } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useSeo } from '../lib/seo'
 import Colors from './Colors'
@@ -9,6 +9,7 @@ import ProductEditor from './ProductEditor'
 import Products from './Products'
 import SettingsPanel from './SettingsPanel'
 import StockMatrix from './StockMatrix'
+import { OrdersProvider, useOrders } from './useOrders'
 
 const NAV = [
   { to: '/admin', label: 'Resumo', end: true },
@@ -91,6 +92,33 @@ export default function Admin() {
   if (state === 'out') return <Login onOk={() => setState('in')} />
 
   return (
+    <OrdersProvider>
+      <Panel onSignOut={() => setState('out')} />
+    </OrdersProvider>
+  )
+}
+
+/** Pede autorização para avisos do navegador (aparecem mesmo com o painel noutro separador). */
+function NotifyButton() {
+  const supported = typeof Notification !== 'undefined'
+  const [perm, setPerm] = useState(supported ? Notification.permission : 'denied')
+  if (!supported) return null
+  if (perm === 'granted')
+    return <span className="hidden text-xs font-semibold text-teal-deep sm:inline" title="O painel avisa quando chega uma encomenda">🔔 Avisos ligados</span>
+  if (perm === 'denied')
+    return <span className="hidden text-xs text-muted sm:inline" title="Autorize as notificações deste site nas definições do navegador">🔕 Avisos bloqueados</span>
+  return (
+    <button onClick={async () => setPerm(await Notification.requestPermission())} className="rounded-full bg-teal px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-deep">
+      🔔 Ativar avisos
+    </button>
+  )
+}
+
+function Panel({ onSignOut }: { onSignOut(): void }) {
+  const { orders, fresh, dismissFresh } = useOrders()
+  const novas = orders.filter((o) => o.status === 'nova').length
+
+  return (
     <div className="min-h-dvh bg-mist">
       <header className="sticky top-0 z-30 border-b border-line bg-white">
         <div className="mx-auto flex max-w-[1400px] items-center gap-4 px-4 py-3 sm:px-6">
@@ -99,14 +127,16 @@ export default function Admin() {
           {api.mode === 'local' && (
             <span className="hidden rounded-full bg-sand px-3 py-1 text-[11px] font-semibold text-ink/70 sm:inline">Modo local</span>
           )}
-          <a href="/" target="_blank" className="ml-auto text-sm text-muted hover:text-navy">
+          <span className="ml-auto" />
+          <NotifyButton />
+          <a href="/" target="_blank" className="text-sm text-muted hover:text-navy">
             Ver loja ↗
           </a>
           <button
             className="text-sm font-semibold text-navy"
             onClick={async () => {
               await api.signOut()
-              setState('out')
+              onSignOut()
             }}
           >
             Sair
@@ -119,16 +149,39 @@ export default function Admin() {
               to={n.to}
               end={n.end}
               className={({ isActive }) =>
-                `shrink-0 border-b-2 px-3 py-3 text-sm font-medium transition ${
+                `flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium transition ${
                   isActive ? 'border-teal text-navy' : 'border-transparent text-muted hover:text-navy'
                 }`
               }
             >
               {n.label}
+              {n.to === '/admin/encomendas' && novas > 0 && (
+                <span className="num grid h-5 min-w-5 place-items-center rounded-full bg-danger px-1.5 text-[11px] font-bold text-white" aria-label={`${novas} por tratar`}>
+                  {novas}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
       </header>
+
+      {fresh.length > 0 && (
+        <div role="alert" className="sticky top-[105px] z-20 mx-auto mt-4 flex max-w-[1400px] flex-wrap items-center gap-3 rounded-2xl bg-navy px-5 py-4 text-white shadow-xl max-sm:mx-4 sm:px-6">
+          <span className="text-xl">🔔</span>
+          <p className="flex-1 text-sm">
+            <b>{fresh.length === 1 ? 'Nova encomenda' : `${fresh.length} novas encomendas`}:</b>{' '}
+            {fresh.slice(0, 3).map((o) => `nº ${o.number} (${o.customer.name})`).join(', ')}
+            {fresh.length > 3 && '…'}
+          </p>
+          <Link to="/admin/encomendas" onClick={dismissFresh} className="rounded-full bg-white px-4 py-2 text-xs font-bold text-navy">
+            Ver encomendas
+          </Link>
+          <button onClick={dismissFresh} className="text-xs text-white/70 underline">
+            Fechar
+          </button>
+        </div>
+      )}
+
       <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6">
         <Routes>
           <Route index element={<Overview />} />
