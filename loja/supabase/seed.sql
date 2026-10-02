@@ -34,7 +34,7 @@ with p as (
   insert into products (slug, name, description, categories, price, is_new)
   values ('conjunto-scrub-medique', 'Conjunto Scrub MEDIQUE',
           'Conjunto de blusa e calça para o dia a dia de médicos, enfermeiros e equipas de saúde. Disponível em 15 cores.',
-          '{feminino,masculino,conjuntos,novidades}', null, true)
+          '{feminino,masculino,conjuntos,novidades}', 2000, true)
   on conflict (slug) do update set slug = excluded.slug
   returning id
 ),

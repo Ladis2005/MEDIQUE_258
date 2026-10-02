@@ -74,7 +74,7 @@ export const SEED_PRODUCTS: Product[] = [
     description:
       'Conjunto de blusa e calça para o dia a dia de médicos, enfermeiros e equipas de saúde. Disponível em 15 cores.',
     categories: ['feminino', 'masculino', 'conjuntos', 'novidades'],
-    price: null,
+    price: 2000,
     isNew: true,
     active: true,
     modelUrl: null,
