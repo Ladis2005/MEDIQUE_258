@@ -51,6 +51,7 @@ export const SEED_IMAGES: Record<string, ProductImages> = {
   vermelho: { front: '/produtos/vermelho-mulher.jpg', gallery: ['/produtos/vermelho-homem.jpg'] },
   branco: { front: '/produtos/branco-mulher.jpg', gallery: ['/produtos/branco-homem.jpg'] },
   'verde-lima': { front: '/produtos/verde-lima-mulher.jpg', gallery: ['/produtos/verde-lima-homem.jpg'] },
+  preto: { front: '/produtos/preto-mulher.jpg', gallery: ['/produtos/preto-homem.jpg'] },
 }
 
 
