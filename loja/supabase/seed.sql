@@ -75,7 +75,11 @@ from (values
   ('rosa',       '{"front":"/produtos/rosa-frente.jpg","gallery":["/produtos/rosa-lado.jpg"]}'),
   ('azul-petroleo', '{"front":"/produtos/petroleo-mulher.jpg","gallery":["/produtos/petroleo-casal.jpg","/produtos/petroleo-homem.jpg"]}'),
   ('cinzento',   '{"front":"/produtos/cinzento-mulher.jpg","gallery":["/produtos/cinzento-casal.jpg","/produtos/cinzento-homem.jpg"]}'),
-  ('bordo',      '{"front":"/produtos/bordo-mulher.jpg","gallery":["/produtos/bordo-casal.jpg"]}')
+  ('bordo',      '{"front":"/produtos/bordo-mulher.jpg","gallery":["/produtos/bordo-casal.jpg"]}'),
+  ('azul-turquesa', '{"front":"/produtos/turquesa-mulher.jpg","gallery":["/produtos/turquesa-homem.jpg"]}'),
+  ('pink',          '{"front":"/produtos/pink-mulher.jpg","gallery":["/produtos/pink-homem.jpg"]}'),
+  ('verde-garrafa', '{"front":"/produtos/verde-garrafa-mulher.jpg","gallery":["/produtos/verde-garrafa-homem.jpg"]}'),
+  ('rosa-salmao',   '{"front":"/produtos/salmao-mulher.jpg","gallery":["/produtos/salmao-homem.jpg"]}')
 ) as v(color_id, images), products p
 where pc.color_id = v.color_id and pc.product_id = p.id and p.slug = 'conjunto-scrub-medique'
   and pc.images = '{}'::jsonb;

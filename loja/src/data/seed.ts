@@ -44,6 +44,10 @@ export const SEED_IMAGES: Record<string, ProductImages> = {
     gallery: ['/produtos/cinzento-casal.jpg', '/produtos/cinzento-homem.jpg'],
   },
   bordo: { front: '/produtos/bordo-mulher.jpg', gallery: ['/produtos/bordo-casal.jpg'] },
+  'azul-turquesa': { front: '/produtos/turquesa-mulher.jpg', gallery: ['/produtos/turquesa-homem.jpg'] },
+  pink: { front: '/produtos/pink-mulher.jpg', gallery: ['/produtos/pink-homem.jpg'] },
+  'verde-garrafa': { front: '/produtos/verde-garrafa-mulher.jpg', gallery: ['/produtos/verde-garrafa-homem.jpg'] },
+  'rosa-salmao': { front: '/produtos/salmao-mulher.jpg', gallery: ['/produtos/salmao-homem.jpg'] },
 }
 
 
