@@ -74,6 +74,7 @@ const MIGRATIONS: [string, (db: LocalDb) => void][] = [
   ['fotos-6', seedPhotos],
   ['fotos-7', seedPhotos],
   ['fotos-8', seedPhotos],
+  ['fotos-9', seedPhotos],
   ['unissexo', (db) => {
     const p = seedProduct(db)
     if (p) for (const c of ['feminino', 'masculino'] as const) if (!p.categories.includes(c)) p.categories.push(c)
