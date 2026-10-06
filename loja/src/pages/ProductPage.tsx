@@ -9,6 +9,7 @@ import { Swatch } from '../components/Swatch'
 import { Zoomable } from '../components/Zoomable'
 import { CATEGORIES } from '../data/seed'
 import { copyText, formatMZN, pecas, priceLabel, waLink, waPrefills } from '../lib/format'
+import { pixel } from '../lib/pixel'
 import { useSeo } from '../lib/seo'
 import { colorTotal, qtyOf } from '../lib/stock'
 import { useCart } from '../state/cart'
@@ -55,6 +56,13 @@ export default function ProductPage() {
 
   useSeo(product ? `${product.name}${col ? ` · ${col.name}` : ''}` : 'Produto', product?.description)
 
+  // Pixel: o cliente viu este produto nesta cor.
+  const viewed = product && pc ? `${product.id}|${pc.id}` : ''
+  useEffect(() => {
+    if (product && pc) pixel.viewContent({ id: pc.id, name: product.name, color: col?.name, price: product.price })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewed])
+
   if (!product) return loading ? <div className="min-h-[60vh]" /> : <NotFound />
 
   const stockHere = pc && size ? qtyOf(pc, size) : 0
@@ -82,6 +90,7 @@ export default function ProductPage() {
   function addToCart() {
     if (!pc || !size || canAdd < 1) return
     add({ productId: product!.id, productColorId: pc.id, size, qty: Math.min(qty, canAdd) })
+    pixel.addToCart({ id: pc.id, name: product!.name, color: col?.name, size, price: product!.price, qty: Math.min(qty, canAdd) })
     setAdded(true)
     setTimeout(() => setAdded(false), 1800)
     setOpen(true)
@@ -262,6 +271,7 @@ export default function ProductPage() {
               rel="noopener noreferrer"
               aria-disabled={!size}
               onClick={async () => {
+                pixel.contact()
                 if (waPrefills(settings.whatsapp)) return
                 setWaNote(
                   (await copyText(waText))

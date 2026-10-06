@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { priceLabel } from '../lib/format'
+import { pixel } from '../lib/pixel'
 import { colorsInStock, isSoldOut, qtyOf, sizesInStock } from '../lib/stock'
 import { useCart } from '../state/cart'
 import { useCatalog } from '../state/catalog'
@@ -34,6 +35,7 @@ export function ProductCard({ product, colorId, fixedColor = false }: Props) {
     // Um único tamanho disponível: adiciona logo. Vários: escolher na página do produto.
     if (pc && sizes.length === 1 && inCart(pc.id, sizes[0]) < qtyOf(pc, sizes[0])) {
       add({ productId: product.id, productColorId: pc.id, size: sizes[0], qty: 1 })
+      pixel.addToCart({ id: pc.id, name: product.name, color: col?.name, size: sizes[0], price: product.price })
       setOpen(true)
     } else navigate(href + '#comprar')
   }

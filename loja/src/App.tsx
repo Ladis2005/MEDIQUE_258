@@ -8,6 +8,7 @@ import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import Home from './pages/Home'
 import { About, Contact, Privacy, SizeGuide, Terms } from './pages/Info'
+import { pixel } from './lib/pixel'
 import NotFound from './pages/NotFound'
 import OrderDone from './pages/OrderDone'
 import ProductPage from './pages/ProductPage'
@@ -23,6 +24,15 @@ function ScrollTop() {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' })
     else window.scrollTo({ top: 0 })
   }, [pathname, hash])
+  return null
+}
+
+/** Conta uma visita no pixel a cada mudança de página da loja. O painel fica de fora. */
+function PixelPageViews() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    if (!pathname.startsWith('/admin')) pixel.pageView()
+  }, [pathname])
   return null
 }
 
@@ -76,6 +86,7 @@ export default function App() {
         <CartProvider>
           <BootSplash />
           <ScrollTop />
+          <PixelPageViews />
           <Routes>
             <Route element={<StoreLayout />}>
               <Route index element={<Home />} />

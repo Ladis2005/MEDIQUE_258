@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { ProductVisual } from '../components/ProductVisual'
 import { WhatsappIcon } from '../components/icons'
 import { api, StockError } from '../lib/api'
 import { formatMZN, PROVINCES } from '../lib/format'
+import { pixel } from '../lib/pixel'
 import { useSeo } from '../lib/seo'
 import { useCart } from '../state/cart'
 import { useCatalog } from '../state/catalog'
@@ -22,6 +23,14 @@ export default function Checkout() {
   const [error, setError] = useState<string | null>(null)
   const [f, setF] = useState({ name: '', phone: '', email: '', province: '', city: '', street: '', reference: '', notes: '' })
   const [touched, setTouched] = useState(false)
+
+  const pixelItems = () =>
+    cart.lines.map((l) => ({ id: l.productColorId, name: l.name, color: l.colorName, size: l.size, price: l.unitPrice, qty: l.qty }))
+  // Pixel: o cliente chegou ao checkout (uma vez por visita à página).
+  useEffect(() => {
+    if (cart.lines.length) pixel.initiateCheckout(pixelItems())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (cart.lines.length === 0 && !busy) return <Navigate to="/carrinho" replace />
 
@@ -42,6 +51,7 @@ export default function Checkout() {
     if (!valid || blocked) return
     setBusy(true)
     setError(null)
+    const bought = pixelItems()
     try {
       const order: Order = await api.placeOrder({
         customer: { name: f.name.trim(), phone: f.phone.trim(), email: f.email.trim() || undefined },
@@ -49,6 +59,7 @@ export default function Checkout() {
         items: cart.toItems(),
         notes: f.notes.trim() || undefined,
       })
+      pixel.purchase(order.id, bought, order.total)
       try {
         sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(order))
       } catch {

@@ -4,6 +4,7 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { WhatsappIcon } from '../components/icons'
 import { copyText, formatMZN, waPrefills } from '../lib/format'
 import { orderMessage, whatsappPayment } from '../lib/payments'
+import { pixel } from '../lib/pixel'
 import { useSeo } from '../lib/seo'
 import { useCatalog } from '../state/catalog'
 import type { Order } from '../types'
@@ -83,7 +84,10 @@ export default function OrderDone() {
             target="_blank"
             rel="noopener noreferrer"
             className="btn bg-[#1F9E5B] text-white hover:bg-[#178A4D]"
-            onClick={() => !prefills && copy(true)}
+            onClick={() => {
+              pixel.contact()
+              if (!prefills) copy(true)
+            }}
           >
             <WhatsappIcon /> Enviar pelo WhatsApp
           </a>
