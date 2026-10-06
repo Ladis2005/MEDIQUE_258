@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { SEED_CATALOG, SEED_IMAGES } from '../data/seed'
-import type { Catalog, Color, NewOrder, Order, OrderStatus, Product, Settings } from '../types'
+import type { Catalog, Color, NewOrder, Order, OrderStatus, Product, ProductImages, Settings } from '../types'
 import { idbGet, idbSet } from './idb'
 
 /**
@@ -266,6 +266,16 @@ function check<T>(res: { data: T; error: { message: string } | null }): NonNulla
   return res.data as NonNullable<T>
 }
 
+/**
+ * Se uma cor do conjunto inicial ainda não tem fotografia na base de dados, usa a que vem com o site
+ * (pasta public/produtos). Assim, fotos novas aparecem logo depois de publicar, sem mexer no Supabase.
+ * Uma foto carregada no painel tem sempre prioridade.
+ */
+function withSeedPhotos(slug: string, colorId: string, images: ProductImages): ProductImages {
+  if (slug !== SEED_CATALOG.products[0].slug || images.front || images.back) return images
+  return SEED_IMAGES[colorId] ?? images
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const toProduct = (r: any): Product => ({
   id: r.id,
@@ -281,7 +291,7 @@ const toProduct = (r: any): Product => ({
   colors: (r.product_colors ?? []).map((pc: any) => ({
     id: pc.id,
     colorId: pc.color_id,
-    images: pc.images ?? {},
+    images: withSeedPhotos(r.slug, pc.color_id, pc.images ?? {}),
     pending: pc.pending ?? 0,
     stock: Object.fromEntries((pc.variants ?? []).map((v: any) => [v.size, v.stock])),
   })),
