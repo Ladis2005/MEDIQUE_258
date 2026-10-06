@@ -81,7 +81,8 @@ from (values
   ('verde-garrafa', '{"front":"/produtos/verde-garrafa-mulher.jpg","gallery":["/produtos/verde-garrafa-homem.jpg"]}'),
   ('rosa-salmao',   '{"front":"/produtos/salmao-mulher.jpg","gallery":["/produtos/salmao-homem.jpg"]}'),
   ('vermelho',      '{"front":"/produtos/vermelho-mulher.jpg","gallery":["/produtos/vermelho-homem.jpg"]}'),
-  ('branco',        '{"front":"/produtos/branco-mulher.jpg","gallery":["/produtos/branco-homem.jpg"]}')
+  ('branco',        '{"front":"/produtos/branco-mulher.jpg","gallery":["/produtos/branco-homem.jpg"]}'),
+  ('verde-lima',    '{"front":"/produtos/verde-lima-mulher.jpg","gallery":["/produtos/verde-lima-homem.jpg"]}')
 ) as v(color_id, images), products p
 where pc.color_id = v.color_id and pc.product_id = p.id and p.slug = 'conjunto-scrub-medique'
   and pc.images = '{}'::jsonb;
