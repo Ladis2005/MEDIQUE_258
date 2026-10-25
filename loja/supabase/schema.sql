@@ -192,3 +192,8 @@ on conflict (id) do nothing;
 create policy "media publica" on storage.objects for select using (bucket_id = 'media');
 create policy "admin envia media" on storage.objects for insert with check (bucket_id = 'media' and is_admin());
 create policy "admin apaga media" on storage.objects for delete using (bucket_id = 'media' and is_admin());
+
+-- ───────────── Tempo real ─────────────
+-- O painel recebe as encomendas novas no instante em que são feitas.
+-- Só os admins as recebem (a política "admin encomendas" também se aplica aqui).
+alter publication supabase_realtime add table orders;

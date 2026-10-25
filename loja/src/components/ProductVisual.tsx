@@ -1,4 +1,5 @@
 import type { Color, ProductColor } from '../types'
+import { responsive } from '../lib/image'
 import { Garment } from './Garment'
 
 interface Props {
@@ -9,20 +10,22 @@ interface Props {
   /** Mostra a etiqueta "Ilustração" quando não há fotografia. */
   badge?: boolean
   sizes?: string
+  /** Imagem principal da página: carrega logo, com prioridade. */
+  eager?: boolean
 }
 
 /** Fotografia real da peça quando existe; caso contrário, a ilustração provisória na cor certa. */
-export function ProductVisual({ pc, color, view = 'front', className = '', badge = true, sizes }: Props) {
+export function ProductVisual({ pc, color, view = 'front', className = '', badge = true, sizes, eager = false }: Props) {
   const src = view === 'front' ? pc?.images.front : pc?.images.back
   if (src)
     return (
       <img
-        src={src}
+        {...responsive(src, sizes)}
         alt={`Uniforme MEDIQUE ${color?.name ?? ''} — ${view === 'front' ? 'frente' : 'costas'}`}
         className={`h-full w-full object-cover object-[50%_35%] ${className}`}
-        loading="lazy"
+        loading={eager ? 'eager' : 'lazy'}
+        fetchPriority={eager ? 'high' : undefined}
         decoding="async"
-        sizes={sizes}
       />
     )
   return (

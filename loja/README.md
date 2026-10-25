@@ -44,6 +44,13 @@ Serve para testar e mostrar; não serve para clientes reais.
 - **Resumo:** peças à venda, encomendas, receita, stock por tamanho, esgotados e últimas peças.
 - **Encomendas:** ver detalhes, contactar o cliente pelo WhatsApp e mudar o estado.
   Cancelar devolve as peças ao stock.
+- **Avisos de venda:** o sino 🔔 no topo do painel mostra as últimas vendas (o que saiu do stock, para quem e quando)
+  e marca as que ainda não viu, incluindo as feitas enquanto o painel esteve fechado. Com o painel aberto, cada venda
+  nova toca um som e mostra uma faixa no topo; carregue em **Ativar avisos** para receber também a notificação do
+  navegador quando estiver noutro separador.
+  Com o Supabase, os avisos chegam no instante (tempo real). Em projetos criados antes desta funcionalidade,
+  corra uma vez `supabase/realtime.sql` no SQL Editor. Sem isso, o painel verifica de 20 em 20 segundos.
+  **Em modo local não há avisos de vendas reais:** cada encomenda fica no navegador do cliente.
 - **Produtos:** criar e editar produtos, preço em MZN, categorias, cores, fotografias
   (frente, costas e detalhes), stock por tamanho e modelo 3D (.glb).
 - **Stock:** tabela rápida com todas as cores e tamanhos, e um filtro para ver só os esgotados.

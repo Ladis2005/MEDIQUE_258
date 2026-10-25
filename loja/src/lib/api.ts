@@ -17,6 +17,8 @@ export interface Api {
   signOut(): Promise<void>
   isAdmin(): Promise<boolean>
   listOrders(): Promise<Order[]>
+  /** Avisa assim que entra uma encomenda nova (tempo real). Devolve a função para parar de ouvir. */
+  onNewOrder(cb: () => void): () => void
   setOrderStatus(id: string, status: OrderStatus): Promise<void>
   saveProduct(p: Product): Promise<void>
   deleteProduct(id: string): Promise<void>
@@ -200,6 +202,10 @@ const localApi: Api = {
   async listOrders() {
     return (await readDb()).orders
   },
+  // Em modo local as encomendas ficam no navegador de cada cliente: não há nada para ouvir.
+  onNewOrder() {
+    return () => {}
+  },
   async setOrderStatus(id, status) {
     const db = await readDb()
     const o = db.orders.find((x) => x.id === id)
@@ -356,6 +362,24 @@ const supabaseApi: Api = {
   async listOrders() {
     const db = await sb()
     return check(await db.from('orders').select('*').order('created_at', { ascending: false })).map(toOrder)
+  },
+  // Precisa de "alter publication supabase_realtime add table orders" (supabase/realtime.sql).
+  // Sem isso, o painel continua a procurar encomendas novas de tempos a tempos.
+  onNewOrder(cb) {
+    let stop = () => {}
+    let stopped = false
+    sb().then((db) => {
+      if (stopped) return
+      const ch = db
+        .channel('admin-orders')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, () => cb())
+        .subscribe()
+      stop = () => db.removeChannel(ch)
+    })
+    return () => {
+      stopped = true
+      stop()
+    }
   },
   async setOrderStatus(id, status) {
     const db = await sb()

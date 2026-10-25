@@ -14,6 +14,11 @@
     <meta property="og:locale" content="pt_MZ" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- Primeira fotografia da página inicial: começa a descarregar antes do JavaScript (igual a HERO_SIZES em Home.tsx). -->
+    <link rel="preload" as="image" type="image/webp" fetchpriority="high"
+      imagesrcset="/produtos/600/bege-frente-costas.webp 600w, /produtos/1200/bege-frente-costas.webp 1200w"
+      imagesizes="(min-width: 768px) 520px, 100vw" />
     <style>
       /* Ecrã de carregamento antes do React arrancar */
       #boot{position:fixed;inset:0;display:grid;place-items:center;background:#fff;z-index:100;transition:opacity .4s}

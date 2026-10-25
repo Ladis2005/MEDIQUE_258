@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { formatMZN, waLink } from '../lib/format'
 import { useCatalog } from '../state/catalog'
@@ -12,7 +13,9 @@ export default function Orders() {
   const { orders, loading, error, reload } = useOrders()
   const { refresh } = useCatalog()
   const [filter, setFilter] = useState<OrderStatus | ''>('')
-  const [openId, setOpenId] = useState<string | null>(null)
+  // ?abrir=<id> vem dos avisos de venda e abre logo essa encomenda.
+  const [params] = useSearchParams()
+  const [openId, setOpenId] = useState<string | null>(params.get('abrir'))
   const [toast, setToast] = useState('')
 
   async function change(id: string, status: OrderStatus) {

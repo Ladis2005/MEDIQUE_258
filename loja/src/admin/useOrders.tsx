@@ -1,18 +1,37 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { api } from '../lib/api'
 import { useCatalog } from '../state/catalog'
 import type { Order } from '../types'
 
-/** De quanto em quanto tempo o painel procura encomendas novas. */
-const POLL_MS = 30_000
+/** De quanto em quanto tempo o painel procura encomendas novas (reserva, se o tempo real falhar). */
+const POLL_MS = 20_000
+/** Número da última encomenda que a equipa já viu neste navegador. */
+const SEEN_KEY = 'medique:admin:seen'
+
+function readSeen(): number | null {
+  try {
+    const v = localStorage.getItem(SEEN_KEY)
+    return v == null ? null : Number(v)
+  } catch {
+    return null
+  }
+}
+function writeSeen(n: number) {
+  try {
+    localStorage.setItem(SEEN_KEY, String(n))
+  } catch {
+    /* sem armazenamento: os avisos valem só para esta sessão */
+  }
+}
 
 interface OrdersCtx {
   orders: Order[]
   loading: boolean
   error: string
   reload(): Promise<void>
-  /** Encomendas que chegaram enquanto o painel estava aberto e ainda não foram vistas. */
+  /** Encomendas ainda não vistas, incluindo as que chegaram com o painel fechado. */
   fresh: Order[]
+  /** Marca todas as encomendas como vistas. */
   dismissFresh(): void
 }
 
@@ -40,21 +59,43 @@ function beep() {
   }
 }
 
-function announce(novos: Order[]) {
-  beep()
+/** Resumo das peças que saíram do stock, ex.: "2× Azul Royal S, 1× Preto M". */
+export const itemsSummary = (o: Order) => o.items.map((i) => `${i.qty}× ${i.colorName} ${i.size}`).join(', ')
+
+/** Regista o service worker do painel (necessário para avisos no telemóvel). */
+export function registerAdminSw() {
+  if (!('serviceWorker' in navigator)) return
+  navigator.serviceWorker.register('/admin-sw.js', { scope: '/admin' }).catch(() => {
+    /* sem service worker: fica o aviso dentro da página e o som */
+  })
+}
+
+/** Mostra a notificação do sistema. Nunca lança erro: um aviso falhado não pode parar o painel. */
+async function notify(o: Order) {
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
-  for (const o of novos) {
-    const pecas = o.items.reduce((a, i) => a + i.qty, 0)
-    const n = new Notification(`Nova encomenda nº ${o.number}`, {
-      body: `${o.customer.name} · ${pecas} ${pecas === 1 ? 'peça' : 'peças'}`,
-      icon: '/logo.png',
-      tag: o.id,
-    })
+  const title = `Nova venda · encomenda nº ${o.number}`
+  const opts = { body: `${o.customer.name}: ${itemsSummary(o)}`, icon: '/logo.png', tag: o.id, data: { url: `/admin/encomendas?abrir=${o.id}` } }
+  try {
+    // Telemóvel (Android): só funciona através do service worker.
+    const reg = await navigator.serviceWorker?.getRegistration('/admin')
+    if (reg) return void (await reg.showNotification(title, opts))
+  } catch {
+    /* tenta da forma clássica */
+  }
+  try {
+    const n = new Notification(title, opts)
     n.onclick = () => {
       window.focus()
       n.close()
     }
+  } catch {
+    /* navegador sem suporte: fica o aviso dentro da página */
   }
+}
+
+function announce(novos: Order[]) {
+  beep()
+  for (const o of novos) notify(o)
 }
 
 export function OrdersProvider({ children }: { children: ReactNode }) {
@@ -62,19 +103,30 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [fresh, setFresh] = useState<Order[]>([])
-  // Encomendas já conhecidas. null até à primeira leitura, para não avisar das que já existiam.
+  const [seen, setSeen] = useState<number | null>(readSeen)
+  // Encomendas já conhecidas nesta sessão. null até à primeira leitura.
   const known = useRef<Set<string> | null>(null)
 
   const reload = useCallback(async () => {
     try {
       const list = await api.listOrders()
+      const top = Math.max(0, ...list.map((o) => o.number))
       if (known.current) {
         const novos = list.filter((o) => !known.current!.has(o.id))
         if (novos.length) {
-          setFresh((f) => [...novos, ...f])
           announce(novos)
           refresh() // o stock desceu com a encomenda nova
+        }
+      } else {
+        const s = readSeen()
+        if (s == null) {
+          // Primeira abertura do painel neste navegador: começa a contar a partir daqui.
+          writeSeen(top)
+          setSeen(top)
+        } else {
+          // Vendas feitas enquanto o painel esteve fechado.
+          const missed = list.filter((o) => o.number > s)
+          if (missed.length) announce(missed)
         }
       }
       known.current = new Set(list.map((o) => o.id))
@@ -89,14 +141,23 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     reload()
+    const unsubscribe = api.onNewOrder(reload)
     const t = setInterval(reload, POLL_MS)
     const onVisible = () => !document.hidden && reload()
     document.addEventListener('visibilitychange', onVisible)
     return () => {
+      unsubscribe()
       clearInterval(t)
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [reload])
+
+  const fresh = useMemo(() => (seen == null ? [] : orders.filter((o) => o.number > seen)), [orders, seen])
+  const dismissFresh = useCallback(() => {
+    const top = Math.max(seen ?? 0, ...orders.map((o) => o.number))
+    writeSeen(top)
+    setSeen(top)
+  }, [orders, seen])
 
   // Mostra o número de encomendas por tratar no título do separador do navegador.
   const novas = orders.filter((o) => o.status === 'nova').length
@@ -106,7 +167,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   }, [novas, orders])
 
   return (
-    <Ctx.Provider value={{ orders, loading, error, reload, fresh, dismissFresh: () => setFresh([]) }}>{children}</Ctx.Provider>
+    <Ctx.Provider value={{ orders, loading, error, reload, fresh, dismissFresh }}>{children}</Ctx.Provider>
   )
 }
 

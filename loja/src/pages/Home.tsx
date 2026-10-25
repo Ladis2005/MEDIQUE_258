@@ -2,13 +2,14 @@ import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } fr
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Garment } from '../components/Garment'
-import { ArrowIcon } from '../components/icons'
+import { ArrowIcon, WhatsappIcon } from '../components/icons'
 import { ProductCard } from '../components/ProductCard'
 import { ProductVisual } from '../components/ProductVisual'
 import { CATEGORIES } from '../data/seed'
-import { pecas } from '../lib/format'
+import { pecas, waLink } from '../lib/format'
+import { responsive } from '../lib/image'
 import { listings } from '../lib/listing'
-import { useSeo } from '../lib/seo'
+import { absUrl, siteUrl, useSeo } from '../lib/seo'
 import { colorTotal, sizesInStock } from '../lib/stock'
 import { useCatalog } from '../state/catalog'
 
@@ -25,11 +26,26 @@ const CAMPAIGN = [
   { src: '/produtos/petroleo-casal.jpg', alt: 'Dois profissionais de saúde com o uniforme MEDIQUE azul petróleo', label: 'Azul Petróleo' },
   { src: '/produtos/bordo-casal.jpg', alt: 'Dois profissionais de saúde com o uniforme MEDIQUE bordô', label: 'Bordô' },
 ]
+// Igual ao pré-carregamento em index.html.
+const HERO_SIZES = '(min-width: 768px) 520px, 100vw'
+
 const rise = (d = 0) => ({
   initial: { opacity: 0, y: 28 },
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.9, delay: d, ease },
 })
+
+/** Ecrã largo (tablet/computador). O 3D (three.js, ~240 KB) só é pedido nestes ecrãs. */
+function useWide() {
+  const [wide, setWide] = useState(() => matchMedia('(min-width: 768px)').matches)
+  useEffect(() => {
+    const mq = matchMedia('(min-width: 768px)')
+    const on = () => setWide(mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  return wide
+}
 
 function Hero() {
   const ref = useRef<HTMLElement>(null)
@@ -39,6 +55,7 @@ function Hero() {
   const scale = useTransform(scrollYProgress, [0, 1], [1, reduce ? 1 : 1.08])
   const { visible } = useCatalog()
   const [slide, setSlide] = useState(0)
+  const wide = useWide()
   useEffect(() => {
     if (reduce) return
     const t = setInterval(() => setSlide((s) => (s + 1) % CAMPAIGN.length), 5500)
@@ -48,9 +65,9 @@ function Hero() {
 
   return (
     <section ref={ref} className="relative overflow-hidden bg-gradient-to-b from-sand via-white to-white">
-      {/* 3D só na metade da fotografia, para nunca tapar o texto; escondido no telemóvel. */}
+      {/* 3D só na metade da fotografia, para nunca tapar o texto. No telemóvel nem é descarregado. */}
       <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 opacity-90 md:block">
-        {!reduce && (
+        {!reduce && wide && (
           <Suspense fallback={null}>
             <HeroScene />
           </Suspense>
@@ -95,7 +112,7 @@ function Hero() {
               <AnimatePresence initial={false}>
                 <motion.img
                   key={slide}
-                  src={CAMPAIGN[slide].src}
+                  {...responsive(CAMPAIGN[slide].src, HERO_SIZES)}
                   alt={CAMPAIGN[slide].alt}
                   initial={{ opacity: 0, scale: 1.04 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -173,7 +190,7 @@ function Categories() {
               <Link to={`/loja/${c.id}`} className="group relative block aspect-[3/4] overflow-hidden rounded-2xl bg-mist">
                 <div className="absolute inset-0 grid place-items-center transition duration-700 ease-soft group-hover:scale-105">
                   {n > 0 ? (
-                    <img src={TILE_PHOTOS[c.id]} alt="" loading="lazy" className="h-full w-full object-cover object-[50%_30%]" />
+                    <img {...responsive(TILE_PHOTOS[c.id], '(min-width: 768px) 25vw, 50vw')} alt="" loading="lazy" className="h-full w-full object-cover object-[50%_30%]" />
                   ) : (
                     <Garment hex={TILE_COLORS[c.id]} className="h-[70%] w-auto" />
                   )}
@@ -286,7 +303,7 @@ function Collection() {
     <section className="wrap py-20 md:py-28">
       <p className="eyebrow">A coleção</p>
       <h2 className="mt-3 font-display text-4xl text-navy md:text-5xl">Feitos para turnos longos</h2>
-      <div className="mt-10 grid gap-x-5 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="mt-10 grid grid-cols-2 gap-x-3 gap-y-10 sm:gap-x-5 sm:gap-y-12 lg:grid-cols-3 xl:grid-cols-4">
         {items.map((l) => (
           <ProductCard key={l.product.id + l.colorId} product={l.product} colorId={l.colorId} fixedColor />
         ))}
@@ -295,6 +312,57 @@ function Collection() {
         <Link to="/loja" className="btn-outline">
           Ver todos os uniformes
         </Link>
+      </div>
+    </section>
+  )
+}
+
+const STEPS = [
+  { title: 'Escolha a cor e o tamanho', text: 'A loja mostra só o que temos em stock, por isso o que vê é o que recebe.' },
+  { title: 'Finalize a encomenda', text: 'Indique o seu contacto e a morada. As peças ficam logo reservadas para si.' },
+  { title: 'Confirme pelo WhatsApp', text: 'Combinamos consigo o pagamento e a entrega, numa conversa direta com a MEDIQUE.' },
+]
+
+function HowToOrder() {
+  const { settings } = useCatalog()
+  return (
+    <section className="border-t border-line bg-sand/50 py-20 md:py-28">
+      <div className="wrap">
+        <div className="max-w-xl">
+          <p className="eyebrow">Como encomendar</p>
+          <h2 className="mt-3 font-display text-4xl text-navy md:text-5xl">Simples, em três passos</h2>
+        </div>
+        <ol className="mt-12 grid gap-5 md:grid-cols-3 md:gap-6">
+          {STEPS.map((st, i) => (
+            <motion.li
+              key={st.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: i * 0.1, ease }}
+              className="rounded-3xl bg-white p-7 shadow-[0_20px_50px_-35px_rgba(7,59,112,.35)]"
+            >
+              <span className="num grid size-11 place-items-center rounded-full bg-navy font-display text-xl text-white">{i + 1}</span>
+              <h3 className="mt-6 font-display text-2xl text-navy">{st.title}</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-muted">{st.text}</p>
+            </motion.li>
+          ))}
+        </ol>
+        <div className="mt-10 flex flex-wrap gap-3">
+          <Link to="/loja" className="btn-primary">
+            Começar a encomenda
+          </Link>
+          {settings.whatsapp && (
+            <a
+              href={waLink(settings.whatsapp, 'Olá MEDIQUE! Tenho uma pergunta sobre os uniformes.')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn border border-[#1F9E5B] text-[#167C47] hover:bg-[#1F9E5B] hover:text-white"
+            >
+              <WhatsappIcon /> Tirar dúvidas
+            </a>
+          )}
+        </div>
       </div>
     </section>
   )
@@ -327,13 +395,28 @@ function Statement() {
 }
 
 export default function Home() {
-  useSeo('', 'MEDIQUE — uniformes médicos premium em Moçambique. Scrubs e conjuntos em 15 cores. Cuidamos de quem cuida.')
+  const { settings } = useCatalog()
+  useSeo('', 'MEDIQUE — uniformes médicos premium em Moçambique. Scrubs e conjuntos em 15 cores. Cuidamos de quem cuida.', {
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'ClothingStore',
+      name: 'MEDIQUE',
+      slogan: 'Cuidamos de quem cuida.',
+      url: siteUrl(),
+      logo: absUrl('/logo.png'),
+      image: absUrl('/og.jpg'),
+      currenciesAccepted: 'MZN',
+      areaServed: { '@type': 'Country', name: 'Moçambique' },
+      sameAs: [settings.instagram, settings.facebook, settings.tiktok, settings.x].filter(Boolean),
+    },
+  })
   return (
     <>
       <Hero />
       <Categories />
       <DiscoverColor />
       <Collection />
+      <HowToOrder />
       <Statement />
     </>
   )

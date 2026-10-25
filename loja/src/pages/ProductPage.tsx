@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { RotateIcon, WhatsappIcon } from '../components/icons'
 import { ProductVisual } from '../components/ProductVisual'
@@ -9,14 +9,17 @@ import { Swatch } from '../components/Swatch'
 import { Zoomable } from '../components/Zoomable'
 import { CATEGORIES } from '../data/seed'
 import { copyText, formatMZN, pecas, priceLabel, waLink, waPrefills } from '../lib/format'
+import { responsive } from '../lib/image'
 import { pixel } from '../lib/pixel'
-import { useSeo } from '../lib/seo'
+import { absUrl, useSeo } from '../lib/seo'
 import { colorTotal, qtyOf } from '../lib/stock'
 import { useCart } from '../state/cart'
 import { useCatalog } from '../state/catalog'
 import NotFound from './NotFound'
 
 const ModelViewer = lazy(() => import('../components/three/ModelViewer'))
+
+const MAIN_SIZES = '(min-width: 1024px) 50vw, 100vw'
 
 type View = { kind: 'front' } | { kind: 'back' } | { kind: 'extra'; src: string } | { kind: '3d' }
 
@@ -40,6 +43,16 @@ export default function ProductPage() {
   const [added, setAdded] = useState(false)
   const [waNote, setWaNote] = useState('')
   const [open, setOpenTab] = useState<string | null>('descricao')
+  // Barra fixa de compra no telemóvel, visível enquanto os botões principais estão fora do ecrã.
+  const buyRef = useRef<HTMLDivElement>(null)
+  const [buyVisible, setBuyVisible] = useState(true)
+  useEffect(() => {
+    const el = buyRef.current
+    if (!el) return
+    const io = new IntersectionObserver(([e]) => setBuyVisible(e.isIntersecting))
+    io.observe(el)
+    return () => io.disconnect()
+  }, [product])
 
   useEffect(() => setPcId(initial?.id), [initial?.id])
 
@@ -54,7 +67,33 @@ export default function ProductPage() {
     setView((v) => (v.kind === 'extra' || (v.kind === 'back' && pc.images.front && !pc.images.back) ? { kind: 'front' } : v))
   }, [pc, settings.sizes])
 
-  useSeo(product ? `${product.name}${col ? ` · ${col.name}` : ''}` : 'Produto', product?.description)
+  const seoImage = pc?.images.front ?? null
+  useSeo(product ? `${product.name}${col ? ` · ${col.name}` : ''}` : 'Produto', product?.description, {
+    image: seoImage,
+    jsonLd:
+      product && pc
+        ? {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: `${product.name}${col ? ` ${col.name}` : ''}`,
+            description: product.description,
+            sku: pc.id,
+            color: col?.name,
+            brand: { '@type': 'Brand', name: 'MEDIQUE' },
+            image: [pc.images.front, pc.images.back, ...(pc.images.gallery ?? [])].filter((x): x is string => !!x).map(absUrl),
+            ...(product.price != null && {
+              offers: {
+                '@type': 'Offer',
+                url: absUrl(`/produto/${product.slug}?cor=${pc.colorId}`),
+                priceCurrency: 'MZN',
+                price: product.price,
+                availability: colorTotal(pc) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                itemCondition: 'https://schema.org/NewCondition',
+              },
+            }),
+          }
+        : null,
+  })
 
   // Pixel: o cliente viu este produto nesta cor.
   const viewed = product && pc ? `${product.id}|${pc.id}` : ''
@@ -111,12 +150,12 @@ export default function ProductPage() {
     if (v.kind === 'extra')
       return (
         <Zoomable>
-          <img src={v.src} alt={`${product.name} — detalhe`} className="h-full w-full object-cover" />
+          <img {...responsive(v.src, MAIN_SIZES)} alt={`${product.name} — detalhe`} className="h-full w-full object-cover" />
         </Zoomable>
       )
     return (
       <Zoomable>
-        <ProductVisual pc={pc} color={col} view={v.kind === 'back' ? 'back' : 'front'} />
+        <ProductVisual pc={pc} color={col} view={v.kind === 'back' ? 'back' : 'front'} sizes={MAIN_SIZES} eager />
       </Zoomable>
     )
   }
@@ -174,9 +213,9 @@ export default function ProductPage() {
                     360°
                   </span>
                 ) : v.kind === 'extra' ? (
-                  <img src={v.src} alt="" className="h-full w-full object-cover" />
+                  <img {...responsive(v.src, '80px')} alt="" loading="lazy" className="h-full w-full object-cover" />
                 ) : (
-                  <ProductVisual pc={pc} color={col} view={v.kind === 'back' ? 'back' : 'front'} badge={false} />
+                  <ProductVisual pc={pc} color={col} view={v.kind === 'back' ? 'back' : 'front'} badge={false} sizes="80px" />
                 )}
                 <span className="sr-only">{label}</span>
               </button>
@@ -258,7 +297,7 @@ export default function ProductPage() {
             </p>
           </div>
 
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div ref={buyRef} className="mt-7 flex flex-wrap items-center gap-3">
             <QtyStepper value={qty} max={Math.max(1, canAdd)} onChange={setQty} />
             <button onClick={addToCart} disabled={!size || canAdd < 1} className="btn-primary h-12 flex-1 px-6">
               {added ? 'Adicionado ✓' : !size ? 'Escolha o tamanho' : canAdd < 1 ? 'Sem mais stock' : 'Adicionar ao carrinho'}
@@ -269,7 +308,6 @@ export default function ProductPage() {
               href={waLink(settings.whatsapp, waText)}
               target="_blank"
               rel="noopener noreferrer"
-              aria-disabled={!size}
               onClick={async () => {
                 pixel.contact()
                 if (waPrefills(settings.whatsapp)) return
@@ -279,7 +317,7 @@ export default function ProductPage() {
                     : 'Indique na conversa o produto, a cor e o tamanho que escolheu.',
                 )
               }}
-              className={`btn mt-3 h-12 w-full border border-[#1F9E5B] text-[#167C47] hover:bg-[#1F9E5B] hover:text-white ${!size ? 'pointer-events-none opacity-40' : ''}`}
+              className={`btn mt-3 h-12 w-full border border-[#1F9E5B] text-[#167C47] hover:bg-[#1F9E5B] hover:text-white`}
             >
               <WhatsappIcon /> Comprar pelo WhatsApp
             </a>
@@ -340,6 +378,37 @@ export default function ProductPage() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {!buyVisible && pc && colorTotal(pc) > 0 && (
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'tween', ease: [0.22, 1, 0.36, 1], duration: 0.35 }}
+            className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] backdrop-blur-lg lg:hidden"
+          >
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs text-muted">
+                  {col?.name}
+                  {size ? ` · ${size}` : ''}
+                </p>
+                <p className="num font-semibold text-navy">{priceLabel(product.price)}</p>
+              </div>
+              {size && canAdd > 0 ? (
+                <button onClick={addToCart} className="btn-primary h-12 px-6">
+                  {added ? 'Adicionado ✓' : 'Adicionar'}
+                </button>
+              ) : (
+                <a href="#comprar" className="btn-primary h-12 px-6">
+                  {size ? 'Sem mais stock' : 'Escolher tamanho'}
+                </a>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

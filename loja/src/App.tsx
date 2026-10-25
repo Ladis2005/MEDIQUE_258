@@ -4,19 +4,40 @@ import { BrowserRouter, Outlet, Route, Routes, useLocation } from 'react-router-
 import { CartDrawer } from './components/CartDrawer'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
-import Cart from './pages/Cart'
-import Checkout from './pages/Checkout'
+import { WhatsappFab } from './components/WhatsappFab'
 import Home from './pages/Home'
-import { About, Contact, Privacy, SizeGuide, Terms } from './pages/Info'
 import { pixel } from './lib/pixel'
-import NotFound from './pages/NotFound'
-import OrderDone from './pages/OrderDone'
-import ProductPage from './pages/ProductPage'
-import Shop from './pages/Shop'
 import { CartProvider } from './state/cart'
 import { CatalogProvider, useCatalog } from './state/catalog'
 
 const Admin = lazy(() => import('./admin/Admin'))
+// A página inicial vem no pacote principal; as restantes são carregadas quando o cliente lá chega.
+const Shop = lazy(() => import('./pages/Shop'))
+const ProductPage = lazy(() => import('./pages/ProductPage'))
+const Cart = lazy(() => import('./pages/Cart'))
+const Checkout = lazy(() => import('./pages/Checkout'))
+const OrderDone = lazy(() => import('./pages/OrderDone'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+const info = () => import('./pages/Info')
+const About = lazy(() => info().then((m) => ({ default: m.About })))
+const SizeGuide = lazy(() => info().then((m) => ({ default: m.SizeGuide })))
+const Contact = lazy(() => info().then((m) => ({ default: m.Contact })))
+const Privacy = lazy(() => info().then((m) => ({ default: m.Privacy })))
+const Terms = lazy(() => info().then((m) => ({ default: m.Terms })))
+
+/** Depois de a página inicial abrir, pede as páginas da loja em segundo plano para a navegação ser imediata. */
+function PrefetchPages() {
+  useEffect(() => {
+    const go = () => {
+      import('./pages/Shop')
+      import('./pages/ProductPage')
+    }
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number }
+    if (w.requestIdleCallback) w.requestIdleCallback(go)
+    else setTimeout(go, 2000)
+  }, [])
+  return null
+}
 
 function ScrollTop() {
   const { pathname, hash } = useLocation()
@@ -70,11 +91,14 @@ function StoreLayout() {
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           className="flex-1"
         >
-          <Outlet />
+          <Suspense fallback={<div className="min-h-[70vh]" />}>
+            <Outlet />
+          </Suspense>
         </motion.main>
       </AnimatePresence>
       <Footer />
       <CartDrawer />
+      <WhatsappFab />
     </div>
   )
 }
@@ -87,6 +111,7 @@ export default function App() {
           <BootSplash />
           <ScrollTop />
           <PixelPageViews />
+          <PrefetchPages />
           <Routes>
             <Route element={<StoreLayout />}>
               <Route index element={<Home />} />

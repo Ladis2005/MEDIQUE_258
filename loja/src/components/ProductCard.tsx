@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { priceLabel } from '../lib/format'
+import { responsive } from '../lib/image'
 import { pixel } from '../lib/pixel'
 import { colorsInStock, isSoldOut, qtyOf, sizesInStock } from '../lib/stock'
 import { useCart } from '../state/cart'
@@ -58,14 +59,14 @@ export function ProductCard({ product, colorId, fixedColor = false }: Props) {
           <ProductVisual pc={pc} color={col} view={hover && pc?.images.back ? 'back' : 'front'} badge={false} />
           {!pc?.images.back && pc?.images.gallery?.[0] && (
             <img
-              src={pc.images.gallery[0]}
+              {...responsive(pc.images.gallery[0])}
               alt=""
               loading="lazy"
               className={`absolute inset-0 h-full w-full object-cover object-[50%_35%] transition-opacity duration-500 ${hover ? 'opacity-100' : 'opacity-0'}`}
             />
           )}
         </div>
-        <div className="absolute top-3 left-3 flex gap-1.5">
+        <div className="absolute top-2.5 left-2.5 flex gap-1.5 sm:top-3 sm:left-3">
           {product.isNew && (
             <span className="rounded-full bg-white px-3 py-1 text-[10px] font-bold tracking-[0.16em] text-navy uppercase">Novo</span>
           )}
@@ -75,12 +76,12 @@ export function ProductCard({ product, colorId, fixedColor = false }: Props) {
         </div>
       </Link>
 
-      <div className="flex flex-1 flex-col gap-2 pt-4">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="font-display text-[22px] leading-tight text-navy">
+      <div className="flex flex-1 flex-col gap-1.5 pt-3 sm:gap-2 sm:pt-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+          <h3 className="font-display text-lg leading-tight text-navy sm:text-[22px]">
             <Link to={href}>{product.name}</Link>
           </h3>
-          <span className="num shrink-0 pt-1 text-sm font-semibold text-ink">{priceLabel(product.price)}</span>
+          <span className="num shrink-0 text-sm font-semibold text-ink sm:pt-1">{priceLabel(product.price)}</span>
         </div>
         {col && <p className="text-sm text-muted">{col.name}</p>}
         {fixedColor && avail.length > 1 && <p className="text-xs text-muted">+{avail.length - 1} cores disponíveis</p>}
@@ -101,8 +102,8 @@ export function ProductCard({ product, colorId, fixedColor = false }: Props) {
             'Sem stock de momento'
           )}
         </p>
-        <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
-          <Link to={href} className="btn-outline px-3 py-3 text-[11px]">
+        <div className="mt-auto grid gap-2 pt-2 sm:grid-cols-2 sm:pt-3">
+          <Link to={href} className="btn-outline px-3 py-3 text-[11px] max-sm:hidden">
             Ver produto
           </Link>
           <button onClick={quickAdd} disabled={soldOut} className="btn-primary px-3 py-3 text-[11px]">
