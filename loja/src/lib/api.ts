@@ -19,6 +19,8 @@ export interface Api {
   listOrders(): Promise<Order[]>
   /** Avisa assim que entra uma encomenda nova (tempo real). Devolve a função para parar de ouvir. */
   onNewOrder(cb: () => void): () => void
+  /** Guarda o registo de notificações push deste aparelho (avisos com o painel fechado). */
+  savePushSubscription(sub: PushSubscriptionJSON): Promise<void>
   setOrderStatus(id: string, status: OrderStatus): Promise<void>
   saveProduct(p: Product): Promise<void>
   deleteProduct(id: string): Promise<void>
@@ -206,6 +208,9 @@ const localApi: Api = {
   onNewOrder() {
     return () => {}
   },
+  async savePushSubscription() {
+    /* modo local: sem servidor para enviar avisos */
+  },
   async setOrderStatus(id, status) {
     const db = await readDb()
     const o = db.orders.find((x) => x.id === id)
@@ -380,6 +385,10 @@ const supabaseApi: Api = {
       stopped = true
       stop()
     }
+  },
+  async savePushSubscription(sub) {
+    const db = await sb()
+    check(await db.from('push_subscriptions').upsert({ endpoint: sub.endpoint, subscription: sub }))
   },
   async setOrderStatus(id, status) {
     const db = await sb()

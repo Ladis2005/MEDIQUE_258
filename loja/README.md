@@ -51,6 +51,15 @@ Serve para testar e mostrar; não serve para clientes reais.
   Com o Supabase, os avisos chegam no instante (tempo real). Em projetos criados antes desta funcionalidade,
   corra uma vez `supabase/realtime.sql` no SQL Editor. Sem isso, o painel verifica de 20 em 20 segundos.
   **Em modo local não há avisos de vendas reais:** cada encomenda fica no navegador do cliente.
+- **Avisos com o painel fechado (push no telemóvel + email):** quando entra uma encomenda, o Supabase chama
+  `api/order-notify.js` na Vercel, que envia uma notificação push para os aparelhos onde carregou em
+  **Ativar avisos** e um email para `NOTIFY_EMAIL`. Para ligar:
+  1. Na Vercel (Settings → Environment Variables) defina `NOTIFY_SECRET` (uma palavra secreta longa),
+     `VAPID_PRIVATE_KEY`, `RESEND_API_KEY` (conta grátis em resend.com) e `NOTIFY_EMAIL`. Publique de novo.
+  2. No SQL Editor do Supabase, corra `supabase/notifications.sql` com a mesma palavra secreta.
+  3. Em cada telemóvel, abra o painel no Chrome e carregue em **Ativar avisos** (no iPhone, primeiro
+     Partilhar → Adicionar ao ecrã principal, e abra o painel a partir desse ícone).
+  Sem domínio próprio verificado no Resend, os emails só podem ir para o email com que criou a conta Resend.
 - **Produtos:** criar e editar produtos, preço em MZN, categorias, cores, fotografias
   (frente, costas e detalhes), stock por tamanho e modelo 3D (.glb).
 - **Stock:** tabela rápida com todas as cores e tamanhos, e um filtro para ver só os esgotados.

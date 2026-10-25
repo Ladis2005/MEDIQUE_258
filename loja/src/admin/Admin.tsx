@@ -10,6 +10,7 @@ import Products from './Products'
 import SettingsPanel from './SettingsPanel'
 import StockMatrix from './StockMatrix'
 import { formatMZN } from '../lib/format'
+import { enablePush, pushSupported } from '../lib/push'
 import { itemsSummary, OrdersProvider, registerAdminSw, useOrders } from './useOrders'
 
 const NAV = [
@@ -103,8 +104,12 @@ export default function Admin() {
 function NotifyButton() {
   const supported = typeof Notification !== 'undefined'
   const [perm, setPerm] = useState(supported ? Notification.permission : 'denied')
+  // Com push, os avisos chegam a este aparelho mesmo com o painel fechado.
+  const [push, setPush] = useState(false)
   useEffect(() => {
-    if (perm === 'granted') registerAdminSw()
+    if (perm !== 'granted') return
+    if (pushSupported()) enablePush().then(setPush)
+    else registerAdminSw()
   }, [perm])
   if (!supported)
     return (
@@ -113,7 +118,14 @@ function NotifyButton() {
       </span>
     )
   if (perm === 'granted')
-    return <span className="text-xs font-semibold whitespace-nowrap text-teal-deep" title="O painel avisa quando chega uma encomenda">🔔 Avisos ligados</span>
+    return (
+      <span
+        className="text-xs font-semibold whitespace-nowrap text-teal-deep"
+        title={push ? 'Este aparelho recebe avisos de venda mesmo com o painel fechado' : 'O painel avisa quando chega uma encomenda'}
+      >
+        🔔 {push ? 'Avisos ligados neste aparelho' : 'Avisos ligados'}
+      </span>
+    )
   if (perm === 'denied')
     return <span className="hidden text-xs text-muted sm:inline" title="Autorize as notificações deste site nas definições do navegador">🔕 Avisos bloqueados</span>
   return (
